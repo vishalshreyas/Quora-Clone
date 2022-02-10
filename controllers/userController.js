@@ -73,7 +73,7 @@ const register = async function (req, res){
 
         let storeData = {fname:fname, lname:lname, email:email, phone:phone, password:password}
         
-       let creationResponse = await userModel.create(storeData)
+        let creationResponse = await userModel.create(storeData)
        
        return res.status(201).send({status: true, message: 'User created successfully', data: creationResponse})
     }catch(err){

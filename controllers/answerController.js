@@ -2,6 +2,7 @@ const questionModel = require("../models/questionModel")
 const userModel = require("../models/userModel")
 const answerModel = require("../models/answerModel")
 const mongoose = require('mongoose')
+const validator = require('../validators/validator')
 
 
 
@@ -11,14 +12,14 @@ const mongoose = require('mongoose')
 const postAnswer = async function (req, res){
     try{
 
-        let data = req.body
+        let requestBody = req.body
         let userIdFromToken = req.userId
         
-        if(!validator.isValidRequestBody(data)){
-            return res.status(400).send({status:false, message:'Invalid request parameters. Please provide user details.'})
+        if(!validator.isValidRequestBody(requestBody)){
+            return res.status(400).send({status:false, message:'Invalid request parameters. Please provide answer details.'})
         }
 
-        let {answeredBy,text,questionId} = data
+        let {answeredBy,text,questionId} = requestBody
 
         //Basic Validation starts
         if(!validator.isValid(answeredBy)){
@@ -68,11 +69,11 @@ const postAnswer = async function (req, res){
 
         // Validation Ends
 
-       let creationResponse = await answerModel.create(data)
+       let creationResponse = await answerModel.create(requestBody)
 
        let increaseCount = user.count + 200;
         if(creationResponse){
-            await userModel.findOneAndUpdate({ _id: answeredBy },{count: increaseCount } );
+            await userModel.findOneAndUpdate({ _id: answeredBy },{count: increaseCount} );
         }
        
        return res.status(201).send({status: false, message: 'Answer created successfully', data: creationResponse})
@@ -118,7 +119,7 @@ const updateAnswerById = async function (req, res){
             return res.status(400).send({status:false, message:'Invalid request parameters. Please provide a valid Answer ID.'})
         }
 
-        let answer = await answerModel.findOne({_id: answerId, isDeleted: false}, {$and:[{price: {$gt:1000}},{price:}}])
+        let answer = await answerModel.findOne({_id: answerId, isDeleted: false})
         
         if(!answer){
             return res.status(400).send({status: false, message: "Answer doesn't exist"})
@@ -129,7 +130,7 @@ const updateAnswerById = async function (req, res){
         }
 
         if (answer.answeredBy != userIdFromToken) {
-            return res.status(401).send({status: false,message: `Unauthorized access! ${answeredBy} is not a logged in user.`});
+            return res.status(401).send({status: false,message: `Unauthorized access! ${answer.answeredBy} is not a logged in user.`});
         }
 
         let {text} = requestBody
@@ -151,6 +152,7 @@ const deleteAnswerById = async function (req, res){
     try{
         
         let answerId = req.params.answerId
+        let userIdFromToken = req.userId
 
         if(!validator.isValidObjectId(answerId)){
             return res.status(400).send({status:false, message:'Invalid request parameters. Please provide a valid Answer ID.'})

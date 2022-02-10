@@ -124,11 +124,19 @@ const getQuestions = async (req, res) => {
           const sortedQuestions = await questionModel
             .find(filterQuery)
             .sort({ createdAt: sort });
+
+            console.log(typeof(sortedQuestions))
   
           if (Array.isArray(sortedQuestions) && sortedQuestions.length === 0) {
             return res
               .status(404)
               .send({ status: false, message: "No Questions found" });
+          }
+
+          for(let i = 0; i < sortedQuestions.length; i++){
+            let answer = await answerModel.find({questionId: sortedQuestions[i]._id})
+            sortedQuestions[i] = sortedQuestions[i].toObject()
+            sortedQuestions[i]['answers'] = answer
           }
   
           return res.status(200).send({
@@ -139,6 +147,13 @@ const getQuestions = async (req, res) => {
         }
   
         const findQuestionsByTag = await questionModel.find(filterQuery);
+
+        for(let i = 0; i < findQuestionsByTag.length; i++){
+          let answer = await answerModel.find({questionId: findQuestionsByTag[i]._id})
+          findQuestionsByTag[i] = findQuestionsByTag[i].toObject()
+          findQuestionsByTag[i]['answers'] = answer
+        }
+
         return res.status(200).send({
           status: true,
           message: "Questions List",
@@ -208,6 +223,7 @@ const getQuestions = async (req, res) => {
     try {
       const questionId = req.params.questionId;
       let requestBody = req.body;
+      let userIdFromToken = req.userId
       const { tag, description } = requestBody;
   
       //Validating questionId.
